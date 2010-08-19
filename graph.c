@@ -3,8 +3,6 @@
 #define N_VERTEX    100
 #define N_EDGES     200
 
-#include "heap.c"
-
 struct edge {
     int vertex;
     int weight;
@@ -34,7 +32,9 @@ int main(int argc, char *argv[])
 {
     int i;
 
-    srandom(time(NULL));
+    struct timeval tv;
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
 
     for (i = 0; i < N_EDGES; i++) {
         int source = random() % N_VERTEX;

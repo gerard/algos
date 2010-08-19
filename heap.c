@@ -75,7 +75,9 @@ int main(int argc, char *argv[])
     int len = N_ELEMS;
     int i;
 
-    srandom(time(NULL));
+    struct timeval tv;
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
 
     for (i = 1; i < N_ELEMS + 1; i++) {
         v[i] = random() % 255;

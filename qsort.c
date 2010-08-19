@@ -7,7 +7,10 @@ void fill_random_array(int *v, int len)
 {
     int i;
 
-    srandom(time(NULL));
+    struct timeval tv;
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
+
     for (i = 0; i < len; i++) {
         v[i] = (int)random() % 256;
     }

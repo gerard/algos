@@ -272,7 +272,9 @@ int bst_main(int argc, char *argv[])
     int values[N_ELEMS];
     int i;
 
-    srandom(time(NULL));
+    struct timeval tv;
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
 
     for (i = 0; i < N_ELEMS; i++) {
         values[i] = random() % 256;
