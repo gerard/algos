@@ -8,13 +8,16 @@
 struct bst_stats {
     int total_mallocs;
     int total_frees;
+    int left_rotations;
+    int right_rotations;
 } stats;
 
 struct node {
-    int v;
     struct node *left;
     struct node *right;
     struct node *parent;
+    int v;
+    int self_balancing_data;
 };
 
 int node_is_right_child(struct node *n)
@@ -72,6 +75,11 @@ struct node *bst_insert(struct node *tree, struct node *parent, int v)
     if (!tree) {
         struct node *n = bst_alloc(v);
         n->parent = parent;
+
+#ifdef bst_fixup_insert
+        bst_fixup_insert(n);
+#endif
+
         return n;
     }
 
@@ -149,6 +157,11 @@ struct node *bst_delete(struct node *tree, int v)
 
         n_only_child->parent = n->parent;
         bst_free(n);
+
+#ifdef bst_fixup_delete
+        bst_fixup_delete(n_only_child);
+#endif
+
         return tree;
     }
 
@@ -168,12 +181,12 @@ void assert_bst_properties(struct node *tree)
     if (!tree) return;
 
     if (tree->left) {
-        assert(tree->left->v < tree->v);
+        assert(tree->left->v <= tree->v);
         assert_bst_properties(tree->left);
     }
 
     if (tree->right) {
-        assert(tree->right->v > tree->v);
+        assert(tree->right->v >= tree->v);
         assert_bst_properties(tree->right);
     }
 }
@@ -187,14 +200,74 @@ void assert_bst_successor(struct node *tree)
     do {
         snode = bst_successor(tree, last_min);
         if (snode) {
-            assert(last_min < snode->v);
+            assert(last_min <= snode->v);
             last_min = snode->v;
         }
     } while (snode);
 }
 
-int main(int argc, char *argv[])
+struct node *bst_rotate_left(struct node *root)
 {
+    assert(root && root->right);
+
+    struct node *new_root = root->right;
+    struct node *beta = new_root->left;
+
+    if (node_is_right_child(root)) root->parent->right = new_root;
+    else if (node_is_left_child(root)) root->parent->left = new_root;
+    root->right = beta;
+    new_root->left = root;
+
+    new_root->parent = root->parent;
+    root->parent = new_root;
+    if (beta) beta->parent = root;
+
+    stats.left_rotations++;
+    return new_root;
+}
+
+struct node *bst_rotate_right(struct node *root)
+{
+    assert(root && root->left);
+
+    struct node *new_root = root->left;
+    struct node *beta = new_root->right;
+
+    if (node_is_right_child(root)) root->parent->right = new_root;
+    else if (node_is_left_child(root)) root->parent->left = new_root;
+    root->left = beta;
+    new_root->right = root;
+
+    new_root->parent = root->parent;
+    root->parent = new_root;
+    if (beta) beta->parent = root;
+
+    stats.right_rotations++;
+    return new_root;
+}
+
+
+typedef struct node *(*bst_postorder_f)(struct node *);
+struct node *bst_postorder(struct node *tree, bst_postorder_f node_process)
+{
+    tree = node_process(tree);
+    if (tree->left) tree->left = bst_postorder(tree->left, node_process);
+    if (tree->right) tree->right = bst_postorder(tree->right, node_process);
+
+    return tree;
+}
+
+int bst_main(int argc, char *argv[])
+{
+    struct node *random_rotation(struct node *n)
+    {
+        if (random() % 2) {
+            if (random() % 2 && n->left) return bst_rotate_right(n);
+            if (random() % 2 && n->right) return bst_rotate_left(n);
+        }
+        return n;
+    }
+
     struct node *root = NULL;
     int values[N_ELEMS];
     int i;
@@ -210,6 +283,17 @@ int main(int argc, char *argv[])
     assert_bst_properties(root);
     assert_bst_successor(root);
 
+    for (i = 0; root->left; i++) root = bst_rotate_right(root);
+
+    assert(bst_size(root) == (stats.total_mallocs - stats.total_frees));
+    assert_bst_properties(root);
+    assert_bst_successor(root);
+
+    for (; i > 0; i--) root = bst_rotate_left(root);
+
+    assert(stats.left_rotations == stats.right_rotations);
+    root = bst_postorder(root, random_rotation);
+
     for (i = 0; i < N_DELETES; i++) {
         root = bst_delete(root, values[random() % 100]);
 
@@ -220,3 +304,7 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+#if __INCLUDE_LEVEL__ == 0
+int main(int argc, char *argv[]) { bst_main(argc, argv); }
+#endif
