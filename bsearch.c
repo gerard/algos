@@ -1,6 +1,9 @@
+#include <stdlib.h>
+#include <time.h>
 #include <assert.h>
+#define ARRAY_SIZE      103
 
-int bsearch(int *v, int s, int len)
+int binarysearch(int *v, int s, int len)
 {
     if (len == 1) {
         if (v[0] == s) return 0;
@@ -11,9 +14,9 @@ int bsearch(int *v, int s, int len)
     if (v[split] == s) {
         return split;
     } else if (s < v[split]) {
-        return bsearch(v, s, split);
+        return binarysearch(v, s, split);
     } else {
-        return split + bsearch(v + split, s, len - split);
+        return split + binarysearch(v + split, s, len - split);
     }
 
     assert(0);
@@ -21,13 +24,21 @@ int bsearch(int *v, int s, int len)
 
 int main(int argc, char *argv[])
 {
-    int v[] = { 1, 4, 5, 10, 12, 15, 16 };
-    int len = sizeof(v) / sizeof(int);
+    int v[ARRAY_SIZE];
+    int i;
 
-    assert(bsearch(v, 10, len) == 3);
-    assert(bsearch(v, 1, len) == 0);
-    assert(bsearch(v, 16, len) == 6);
-    assert(bsearch(v, 2, len) == -1);
+    struct timeval tv;
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
+
+    v[0] = random() % 256;
+    for (i = 1; i < ARRAY_SIZE; i++) {
+        v[i] = v[i-1] + random() % 256 + 1;
+    }
+
+    for (i = 0; i < ARRAY_SIZE; i++) {
+        assert(binarysearch(v, v[i], ARRAY_SIZE) == i);
+    }
 
     return 0;
 }
