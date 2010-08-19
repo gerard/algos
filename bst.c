@@ -1,9 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <time.h>
 #define N_ELEMS         100
 #define N_DELETES       10000
+
+#ifndef bst_fixup_insert
+#define bst_fixup_insert(n)     (n)
+#endif
+
+#ifndef bst_fixup_delete
+#define bst_fixup_delete(n)     (n)
+#endif
 
 struct bst_stats {
     int total_mallocs;
@@ -19,6 +28,11 @@ struct node {
     int v;
     int self_balancing_data;
 };
+
+void bst_stats_clear(void)
+{
+    memset(&stats, 0, sizeof(struct bst_stats));
+}
 
 int node_is_right_child(struct node *n)
 {
@@ -50,11 +64,11 @@ int node_childs(struct node *n)
 
 struct node *bst_alloc(int v) {
     struct node *n = malloc(sizeof(struct node));
-    stats.total_mallocs++;
 
+    memset(n, 0, sizeof(struct node));
     n->v = v;
-    n->left = n->right = n->parent = NULL;
 
+    stats.total_mallocs++;
     return n;
 }
 
@@ -70,26 +84,32 @@ int bst_size(struct node *tree)
     else return bst_size(tree->left) + bst_size(tree->right) + 1;
 }
 
-struct node *bst_insert(struct node *tree, struct node *parent, int v)
+struct node *bst_root(struct node *n)
+{
+    while (n->parent) n = n->parent;
+    return n;
+}
+
+struct node *bst_insert(struct node *tree, int v)
 {
     if (!tree) {
         struct node *n = bst_alloc(v);
-        n->parent = parent;
-
-#ifdef bst_fixup_insert
-        bst_fixup_insert(n);
-#endif
-
-        return n;
+        return bst_fixup_insert(n);
     }
 
     if (v < tree->v) {
-        tree->left = bst_insert(tree->left, tree, v);
-    } else if (v > tree->v) {
-        tree->right = bst_insert(tree->right, tree, v);
+        tree->left = bst_insert(tree->left, v);
+        tree->left->parent = tree;
+
+        tree->left = bst_fixup_insert(tree->left);
+    } else if(v > tree->v) {
+        tree->right = bst_insert(tree->right, v);
+        tree->right->parent = tree;
+
+        tree->right = bst_fixup_insert(tree->right);
     }
 
-    return tree;
+    return bst_fixup_insert(tree);
 }
 
 struct node *bst_find(struct node *tree, int v)
@@ -139,7 +159,9 @@ struct node *bst_delete(struct node *tree, int v)
             assert(n == tree);
             tree = NULL;
         }
+
         bst_free(n);
+        bst_fixup_delete(n->parent);
         return tree;
     }
 
@@ -156,12 +178,9 @@ struct node *bst_delete(struct node *tree, int v)
         }
 
         n_only_child->parent = n->parent;
+
         bst_free(n);
-
-#ifdef bst_fixup_delete
         bst_fixup_delete(n_only_child);
-#endif
-
         return tree;
     }
 
@@ -278,13 +297,15 @@ int bst_main(int argc, char *argv[])
 
     for (i = 0; i < N_ELEMS; i++) {
         values[i] = random() % 256;
-        root = bst_insert(root, NULL, values[i]);
+        root = bst_insert(root, values[i]);
     }
 
     assert(bst_size(root) == (stats.total_mallocs - stats.total_frees));
     assert_bst_properties(root);
     assert_bst_successor(root);
 
+    stats.left_rotations = 0;
+    stats.right_rotations = 0;
     for (i = 0; root->left; i++) root = bst_rotate_right(root);
 
     assert(bst_size(root) == (stats.total_mallocs - stats.total_frees));
