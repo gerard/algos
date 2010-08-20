@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #define N_VERTEX    100
 #define N_EDGES     200
@@ -33,6 +34,7 @@ int main(int argc, char *argv[])
     int i;
 
     struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #define ARRAY_SIZE  100
 
@@ -8,6 +9,7 @@ void fill_random_array(int *v, int len)
     int i;
 
     struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 

@@ -88,5 +88,8 @@ int main(int argc, char *argv[])
     }
 
     bst_postorder(root, check_depth);
+    bst_free_all(root);
+
+    return 0;
 }
 #endif

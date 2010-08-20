@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <assert.h>
 #define N_ELEMS         100
@@ -76,6 +77,7 @@ int main(int argc, char *argv[])
     int i;
 
     struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 
@@ -86,7 +88,6 @@ int main(int argc, char *argv[])
     minheap_build(v, len);
     assert_minheap_properties(v, 1, len);
 
-    return 0;
     int min_prev = -1;
     while (len) {
         int min = minheap_extract(v, &len);

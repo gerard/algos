@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <assert.h>
 #define ARRAY_SIZE      103
@@ -28,6 +29,7 @@ int main(int argc, char *argv[])
     int i;
 
     struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 

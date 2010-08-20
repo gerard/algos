@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <time.h>
 #define N_ELEMS         100
-#define N_DELETES       10000
+#define N_DELETES       100
 
 #ifndef bst_fixup_insert
 #define bst_fixup_insert(n)     (n)
@@ -160,8 +160,8 @@ struct node *bst_delete(struct node *tree, int v)
             tree = NULL;
         }
 
-        bst_free(n);
         bst_fixup_delete(n->parent);
+        bst_free(n);
         return tree;
     }
 
@@ -179,8 +179,8 @@ struct node *bst_delete(struct node *tree, int v)
 
         n_only_child->parent = n->parent;
 
-        bst_free(n);
         bst_fixup_delete(n_only_child);
+        bst_free(n);
         return tree;
     }
 
@@ -265,6 +265,10 @@ struct node *bst_rotate_right(struct node *root)
     return new_root;
 }
 
+void bst_free_all(struct node *tree)
+{
+    while (tree) tree = bst_delete(tree, tree->v);
+}
 
 typedef struct node *(*bst_postorder_f)(struct node *);
 struct node *bst_postorder(struct node *tree, bst_postorder_f node_process)
@@ -292,6 +296,7 @@ int bst_main(int argc, char *argv[])
     int i;
 
     struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 
@@ -324,6 +329,8 @@ int bst_main(int argc, char *argv[])
         assert_bst_properties(root);
         assert_bst_successor(root);
     }
+
+    bst_free_all(root);
 
     return 0;
 }
