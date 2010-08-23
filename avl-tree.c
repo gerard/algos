@@ -6,7 +6,7 @@ struct node *avl_fixup_insert(struct node *);
 struct node *avl_fixup_delete(struct node *);
 
 #include "bst.c"
-#define MAX(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 int avl_node_getdepth(struct node *n)
 {
@@ -21,38 +21,52 @@ void avl_node_setdepth(struct node *n)
     n->self_balancing_data = MAX(ldepth, rdepth) + 1;
 }
 
+struct node *avl_rotate_left(struct node *n)
+{
+    struct node *ret = bst_rotate_left(n);
+    avl_node_setdepth(ret->left);
+    avl_node_setdepth(ret);
+    return ret;
+}
+
+struct node *avl_rotate_right(struct node *n)
+{
+    struct node *ret = bst_rotate_right(n);
+    avl_node_setdepth(ret->right);
+    avl_node_setdepth(ret);
+    return ret;
+}
+
 struct node *avl_fixup_insert(struct node *n)
 {
     int ldepth = avl_node_getdepth(n->left);
     int rdepth = avl_node_getdepth(n->right);
-    avl_node_setdepth(n);
 
     if (ldepth - rdepth > 1) {
-        if (!n->left->left) {
-            assert(n->left->right);
+        int lldepth = avl_node_getdepth(n->left->left);
+        int lrdepth = avl_node_getdepth(n->left->right);
 
-            bst_rotate_left(n->left);
+        if (lldepth < lrdepth) {
+            assert(n->left->right);
+            n->left = avl_rotate_left(n->left);
         }
 
-        n = bst_rotate_right(n);
-        avl_node_setdepth(n->left);
-        avl_node_setdepth(n->right);
-        avl_node_setdepth(n);
+        n = avl_rotate_right(n);
     }
 
     if (rdepth - ldepth > 1) {
-        if (!n->right->right) {
-            assert(n->right->left);
+        int rldepth = avl_node_getdepth(n->right->left);
+        int rrdepth = avl_node_getdepth(n->right->right);
 
-            bst_rotate_right(n->right);
+        if (rrdepth < rldepth) {
+            assert(n->right->left);
+            n->right = avl_rotate_right(n->right);
         }
 
-        n = bst_rotate_left(n);
-        avl_node_setdepth(n->left);
-        avl_node_setdepth(n->right);
-        avl_node_setdepth(n);
+        n = avl_rotate_left(n);
     }
 
+    avl_node_setdepth(n);
     return n;
 }
 
@@ -79,15 +93,20 @@ int main(int argc, char *argv[])
     int values[N_ELEMS];
     int i;
 
+    struct timeval tv;
+    memset(&tv, 0, sizeof(struct timeval));
+    gettimeofday(&tv);
+    srandom(tv.tv_usec);
+
     bst_main(argc, argv);
 
     memset(&stats, 0, sizeof(struct bst_stats));
     for (i = 0; i < N_ELEMS; i++) {
         values[i] = random() % 256;
         root = bst_insert(root, values[i]);
+        bst_postorder(root, check_depth);
     }
 
-    bst_postorder(root, check_depth);
     bst_free_all(root);
 
     return 0;
