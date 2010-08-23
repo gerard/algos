@@ -10,7 +10,14 @@ $(BINS): bin/% : %.c
 	$(CC) $< -o $@ -g -O0
 
 test:
-	@for b in bin/*; do echo $$b && for i in `seq 1 100`; do ./$$b > /dev/null || break; done ; done
+	@for b in bin/*; do \
+		printf "%20s" "$$b "; \
+		for i in `seq 1 20`; do \
+			echo -n .; \
+			./$$b > /dev/null || break; \
+		done; \
+		echo; \
+	done
 
 clean:
 	rm -rf bin
