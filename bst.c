@@ -144,53 +144,49 @@ struct node *bst_successor(struct node *tree, int v)
     }
 }
 
+struct node *bst_delete_simple(struct node *tree, int v)
+{
+    if (!tree) return NULL;
+
+    if (tree->v > v) {
+        tree->left = bst_delete_simple(tree->left, v);
+        return bst_fixup_delete(tree);
+    }
+
+    if (tree->v < v) {
+        tree->right = bst_delete_simple(tree->right, v);
+        return bst_fixup_delete(tree);
+    }
+
+    if (node_childs(tree) == 0) {
+        bst_free(tree);
+        return NULL;
+    }
+
+    if (node_childs(tree) == 1) {
+        struct node *tree_child = tree->left ? tree->left : tree->right;
+
+        tree_child->parent = tree->parent;
+        bst_free(tree);
+        return tree_child;
+    }
+
+    /* We omit this case which is handled with bst_delete() */
+    assert(node_childs(tree) == 2);
+    return tree;
+}
+
 struct node *bst_delete(struct node *tree, int v)
 {
-    struct node *n = bst_find(tree, v);
+    struct node *del_node = NULL;
+    tree = bst_delete_simple(tree, v);
 
-    if (!n) return tree;
+    if (bst_find(tree, v)) {
+        int v_succ = bst_successor(tree, v)->v;
+        tree = bst_delete_simple(tree, v_succ);
 
-    if (node_childs(n) == 0) {
-        if (node_is_left_child(n)) {
-            n->parent->left = NULL;
-        } else if(node_is_right_child(n)) {
-            n->parent->right = NULL;
-        } else {
-            assert(n == tree);
-            tree = NULL;
-        }
-
-        bst_fixup_delete(n->parent);
-        bst_free(n);
-        return tree;
+        bst_find(tree, v)->v = v_succ;
     }
-
-    if (node_childs(n) == 1) {
-        struct node *n_only_child = n->left ? n->left : n->right;
-
-        if (node_is_left_child(n)) {
-            n->parent->left = n_only_child;
-        } else if (node_is_right_child(n)) {
-            n->parent->right = n_only_child;
-        } else {
-            assert(n == tree);
-            tree = n_only_child;
-        }
-
-        n_only_child->parent = n->parent;
-
-        bst_fixup_delete(n_only_child);
-        bst_free(n);
-        return tree;
-    }
-
-    assert(node_childs(n) == 2);
-    struct node *n_succ = bst_successor(tree, n->v);
-    assert(n_succ);
-
-    int n_succ_value = n_succ->v;
-    bst_delete(tree, n_succ_value);
-    n->v = n_succ_value;
 
     return tree;
 }
