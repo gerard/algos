@@ -228,8 +228,6 @@ struct node *bst_rotate_left(struct node *root)
     struct node *new_root = root->right;
     struct node *beta = new_root->left;
 
-    if (node_is_right_child(root)) root->parent->right = new_root;
-    else if (node_is_left_child(root)) root->parent->left = new_root;
     root->right = beta;
     new_root->left = root;
 
@@ -248,8 +246,6 @@ struct node *bst_rotate_right(struct node *root)
     struct node *new_root = root->left;
     struct node *beta = new_root->right;
 
-    if (node_is_right_child(root)) root->parent->right = new_root;
-    else if (node_is_left_child(root)) root->parent->left = new_root;
     root->left = beta;
     new_root->right = root;
 
