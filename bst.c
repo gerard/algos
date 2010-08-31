@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
-#define N_ELEMS         100
+#define N_ELEMS         1000
 #define N_DELETES       100
 
 #ifndef bst_fixup_insert

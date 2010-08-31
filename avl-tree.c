@@ -37,7 +37,7 @@ struct node *avl_rotate_right(struct node *n)
     return ret;
 }
 
-struct node *avl_fixup_insert(struct node *n)
+struct node *avl_fixup(struct node *n)
 {
     int ldepth = avl_node_getdepth(n->left);
     int rdepth = avl_node_getdepth(n->right);
@@ -70,9 +70,14 @@ struct node *avl_fixup_insert(struct node *n)
     return n;
 }
 
+struct node *avl_fixup_insert(struct node *n)
+{
+    return avl_fixup(n);
+}
+
 struct node *avl_fixup_delete(struct node *n)
 {
-    return n;
+    return avl_fixup(n);
 }
 
 #if __INCLUDE_LEVEL__ == 0
@@ -98,16 +103,24 @@ int main(int argc, char *argv[])
     gettimeofday(&tv);
     srandom(tv.tv_usec);
 
-    bst_main(argc, argv);
-
     memset(&stats, 0, sizeof(struct bst_stats));
     for (i = 0; i < N_ELEMS; i++) {
         values[i] = random() % 256;
         root = bst_insert(root, values[i]);
-        bst_postorder(root, check_depth);
     }
 
-    bst_free_all(root);
+    for (i = 0; i < N_DELETES; i++) {
+        root = bst_delete(root, values[random() % N_ELEMS]);
+
+        assert(bst_size(root) == (stats.total_mallocs - stats.total_frees));
+        assert_bst_properties(root);
+        assert_bst_successor(root);
+    }
+
+    while (root) {
+        bst_postorder(root, check_depth);
+        root = bst_delete(root, root->v);
+    }
 
     return 0;
 }
