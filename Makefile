@@ -6,6 +6,7 @@ bin:
 	mkdir -p bin
 
 bin/avl-tree: bst.c
+$(BINS): perf.h
 $(BINS): bin/% : %.c
 	$(CC) $< -o $@ -g -O0
 
@@ -20,6 +21,6 @@ test:
 	done
 
 clean:
-	rm -rf bin
+	rm -rf bin *.data
 
 .PHONY: test
